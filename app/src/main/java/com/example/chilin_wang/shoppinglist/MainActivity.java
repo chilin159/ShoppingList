@@ -200,10 +200,7 @@ public class MainActivity extends AppCompatActivity {
                         if (cursor.getCount() > 0) {
                             cursor.moveToFirst();
                             do {
-                                Log.d(MainActivity.TAG, cursor.getLong(0) + "," + cursor.getString(1) + ","
-                                        + cursor.getString(2) + "," + cursor.getString(3) + "," + cursor.getString(4)
-                                        + "," + cursor.getString(5) + "," + cursor.getString(6));
-                                mMyCreateDBTable.insertToTable(TABLE_NAME + mTableNum, cursor.getString(1), cursor.getInt(2), cursor.getString(3), cursor.getInt(4), cursor.getString(6));
+                                mMyCreateDBTable.insertToTable(TABLE_NAME + mTableNum, cursor.getString(1), cursor.getInt(2), cursor.getString(3), cursor.getInt(4), cursor.getString(5), cursor.getString(7));
                             } while (cursor.moveToNext());
                         }
                         cursor.close();

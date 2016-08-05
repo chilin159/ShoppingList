@@ -18,6 +18,7 @@ public class MyCreateDBTable {
     private static final String ITEM_NUMBER = "item_number";
     private static final String ITEM_UNIT = "item_unit";
     private static final String ITEM_PRICE = "item_price";
+    private static final String CURRENCY = "currency";
     private static final String AVERAGE_PRICE = "average_price";
     private static final String SHOP_NAME = "shop_name";
     private String TABLE_NAME;
@@ -55,6 +56,7 @@ public class MyCreateDBTable {
                 ITEM_NUMBER + " INTEGER, " +
                 ITEM_UNIT + " TEXT, " +
                 ITEM_PRICE + " INTEGER, " +
+                CURRENCY + " TEXT, " +
                 AVERAGE_PRICE + " REAL, " +
                 SHOP_NAME + " TEXT" +
                 ")";
@@ -96,28 +98,14 @@ public class MyCreateDBTable {
         return false;
     }
 
-    public void insert(String itemName, int itemNum, String itemUnit, int itemPrice, String shopName) {
-        float averagePrice = 0;
-        if(itemNum != 0 && itemPrice !=0) {
-            averagePrice = (float) itemPrice / itemNum;
-        }
-        ContentValues cv = new ContentValues();
-        cv.put(ITEM_NAME, itemName);
-        cv.put(ITEM_NUMBER, itemNum);
-        cv.put(ITEM_UNIT, itemUnit);
-        cv.put(ITEM_PRICE, itemPrice);
-        cv.put(AVERAGE_PRICE, averagePrice);
-        cv.put(SHOP_NAME, shopName);
-        db.insert(TABLE_NAME, null, cv);
-    }
-
-    public void insertToTable(String tableName, String itemName, int itemNum, String itemUnit, int itemPrice, String shopName) {
+    public void insertToTable(String tableName, String itemName, int itemNum, String itemUnit, int itemPrice, String currency, String shopName) {
         float averagePrice = (float) itemPrice / itemNum;
         ContentValues cv = new ContentValues();
         cv.put(ITEM_NAME, itemName);
         cv.put(ITEM_NUMBER, itemNum);
         cv.put(ITEM_UNIT, itemUnit);
         cv.put(ITEM_PRICE, itemPrice);
+        cv.put(CURRENCY, currency);
         cv.put(AVERAGE_PRICE, averagePrice);
         cv.put(SHOP_NAME, shopName);
         db.insert(tableName, null, cv);
@@ -133,13 +121,14 @@ public class MyCreateDBTable {
         return db.query(TABLE_NAME, null, where, null, null, null, null, null);
     }
 
-    public void update(int id, String itemName, int itemNum, String itemUnit, int itemPrice, String shopName) {
+    public void update(int id, String itemName, int itemNum, String itemUnit, int itemPrice, String currency, String shopName) {
         float averagePrice = (float) itemPrice / itemNum;
         ContentValues cv = new ContentValues();
         cv.put(ITEM_NAME, itemName);
         cv.put(ITEM_NUMBER, itemNum);
         cv.put(ITEM_UNIT, itemUnit);
         cv.put(ITEM_PRICE, itemPrice);
+        cv.put(CURRENCY, currency);
         cv.put(AVERAGE_PRICE, averagePrice);
         cv.put(SHOP_NAME, shopName);
         String where = KEY_ID + "=" + id;

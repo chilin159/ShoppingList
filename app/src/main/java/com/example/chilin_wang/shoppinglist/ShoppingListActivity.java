@@ -8,11 +8,9 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.ContextMenu;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 
@@ -21,10 +19,16 @@ import java.lang.reflect.Field;
 public class ShoppingListActivity extends AppCompatActivity {
 
     private static final int MENU_STATS_ADD = Menu.FIRST + 1;
+    View mInputView;
+    EditText mItemName;
+    EditText mItemNum;
+    EditText mItemUnit;
+    EditText mItemPrice;
+    EditText mCurrency;
+    EditText mShopName;
     private MyCreateDBTable mMyCreateDBTable;
     private int mTableId;
     private LinearLayout mLinearLayout;
-    private int mItemNum = 1;
     private View.OnClickListener modifyItemListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -107,27 +111,20 @@ public class ShoppingListActivity extends AppCompatActivity {
                 do {
                     Log.d(MainActivity.TAG, cursor.getLong(0) + "," + cursor.getString(1) + ","
                             + cursor.getString(2) + "," + cursor.getString(3) + "," + cursor.getString(4)
-                            + "," + cursor.getString(5) + "," + cursor.getString(6));
-                    String text = cursor.getLong(0) + "," + cursor.getString(1) + ","
-                            + cursor.getString(2) + "," + cursor.getString(3) + "," + cursor.getString(4)
-                            + "," + cursor.getString(5) + "," + cursor.getString(6);
-                    mItemNum = cursor.getInt(0);
-                    addNewButton(this, text, cursor.getInt(0));
+                            + "," + cursor.getString(5) + "," + cursor.getString(6) + "," + cursor.getString(7));
+                    addNewButton(this, cursor, cursor.getInt(0));
                 } while (cursor.moveToNext());
             } else {
                 cursor.moveToLast();
-                String text = cursor.getLong(0) + "," + cursor.getString(1) + ","
-                        + cursor.getString(2) + "," + cursor.getString(3) + "," + cursor.getString(4)
-                        + "," + cursor.getString(5) + "," + cursor.getString(6);
-                addNewButton(this, text, cursor.getInt(0));
+                addNewButton(this, cursor, cursor.getInt(0));
             }
         }
         cursor.close();
     }
 
-    private void addNewButton(Context context, String text, int id) {
-        Button btn = new Button(context);
-        btn.setText(text);
+    private void addNewButton(Context context, Cursor cursor, int id) {
+        ShoppingListView btn = new ShoppingListView(context);
+        btn.setShoppingList(cursor);
         btn.setId(id);
         btn.setOnClickListener(modifyItemListener);
         registerForContextMenu(btn);
@@ -136,36 +133,20 @@ public class ShoppingListActivity extends AppCompatActivity {
 
     private void addNewItem() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        LayoutInflater inflater = getLayoutInflater();
-        final View inputView = inflater.inflate(R.layout.shopping_list_dialog, null);
-        final EditText itemName = (EditText) inputView.findViewById(R.id.item_name);
-        final EditText itemNum = (EditText) inputView.findViewById(R.id.item_num);
-        final EditText itemUnit = (EditText) inputView.findViewById(R.id.item_unit);
-        final EditText itemPrice = (EditText) inputView.findViewById(R.id.item_price);
-        final EditText shopName = (EditText) inputView.findViewById(R.id.shop_name);
+        initDialogLayout();
         builder.setTitle("Add new item")
-                .setView(inputView)
+                .setView(mInputView)
                 .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         boolean isFinishDialog = true;
-                        if (itemName.getText().toString().trim().equals("")) {
-                            if (itemName.getText().toString().trim().equals("")) {
-                                itemName.setHint("Please enter item name");
+                        if (mItemName.getText().toString().trim().equals("")) {
+                            if (mItemName.getText().toString().trim().equals("")) {
+                                mItemName.setHint("Please enter item name");
                             }
                             isFinishDialog = false;
                         } else {
                             //insert data to database
-                            int num = 0;
-                            int price = 0;
-                            if (!itemNum.getText().toString().equals("")) {
-                                num = Integer.parseInt(itemNum.getText().toString());
-                            }
-                            if (!itemPrice.getText().toString().equals("")) {
-                                price = Integer.parseInt(itemPrice.getText().toString());
-                            }
-                            mMyCreateDBTable.insert(itemName.getText().toString(), num,
-                                    itemUnit.getText().toString(), price,
-                                    shopName.getText().toString());
+                            insertData();
                             loadValue(false);
                         }
                         if (!isFinishDialog) {
@@ -205,35 +186,30 @@ public class ShoppingListActivity extends AppCompatActivity {
         final View view = v;
         Cursor cursor = mMyCreateDBTable.query(v.getId());
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        LayoutInflater inflater = getLayoutInflater();
-        final View inputView = inflater.inflate(R.layout.shopping_list_dialog, null);
-        final EditText itemName = (EditText) inputView.findViewById(R.id.item_name);
-        final EditText itemNum = (EditText) inputView.findViewById(R.id.item_num);
-        final EditText itemUnit = (EditText) inputView.findViewById(R.id.item_unit);
-        final EditText itemPrice = (EditText) inputView.findViewById(R.id.item_price);
-        final EditText shopName = (EditText) inputView.findViewById(R.id.shop_name);
+        initDialogLayout();
         if (cursor.moveToFirst()) {
-            itemName.setText(cursor.getString(1));
-            itemNum.setText(String.valueOf(cursor.getInt(2)));
-            itemUnit.setText(cursor.getString(3));
-            itemPrice.setText(String.valueOf(cursor.getInt(4)));
-            shopName.setText(cursor.getString(6));
+            mItemName.setText(cursor.getString(1));
+            mItemNum.setText(String.valueOf(cursor.getInt(2)));
+            mItemUnit.setText(cursor.getString(3));
+            mItemPrice.setText(String.valueOf(cursor.getInt(4)));
+            mCurrency.setText(cursor.getString(5));
+            mShopName.setText(cursor.getString(7));
         }
         builder.setTitle("Modify item")
-                .setView(inputView)
+                .setView(mInputView)
                 .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         boolean isFinishDialog = true;
-                        if (itemName.getText().toString().trim().equals("")) {
-                            if (itemName.getText().toString().trim().equals("")) {
-                                itemName.setHint("Please enter item name");
+                        if (mItemName.getText().toString().trim().equals("")) {
+                            if (mItemName.getText().toString().trim().equals("")) {
+                                mItemName.setHint("Please enter item name");
                             }
                             isFinishDialog = false;
                         } else {
                             //update data to database
-                            mMyCreateDBTable.update(view.getId(), itemName.getText().toString(), Integer.parseInt(itemNum.getText().toString()),
-                                    itemUnit.getText().toString(), Integer.parseInt(itemPrice.getText().toString()),
-                                    shopName.getText().toString());
+                            mMyCreateDBTable.update(view.getId(), mItemName.getText().toString(), Integer.parseInt(mItemNum.getText().toString()),
+                                    mItemUnit.getText().toString(), Integer.parseInt(mItemPrice.getText().toString()),
+                                    mCurrency.getText().toString(), mShopName.getText().toString());
                             mLinearLayout.removeAllViews();
                             loadValue(true);
                         }
@@ -271,46 +247,30 @@ public class ShoppingListActivity extends AppCompatActivity {
     }
 
     private void copyItem(View v) {
-        final View view = v;
         Cursor cursor = mMyCreateDBTable.query(v.getId());
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        LayoutInflater inflater = getLayoutInflater();
-        final View inputView = inflater.inflate(R.layout.shopping_list_dialog, null);
-        final EditText itemName = (EditText) inputView.findViewById(R.id.item_name);
-        final EditText itemNum = (EditText) inputView.findViewById(R.id.item_num);
-        final EditText itemUnit = (EditText) inputView.findViewById(R.id.item_unit);
-        final EditText itemPrice = (EditText) inputView.findViewById(R.id.item_price);
-        final EditText shopName = (EditText) inputView.findViewById(R.id.shop_name);
+        initDialogLayout();
         if (cursor.moveToFirst()) {
-            itemName.setText(cursor.getString(1));
-            itemNum.setText(String.valueOf(cursor.getInt(2)));
-            itemUnit.setText(cursor.getString(3));
-            itemPrice.setText(String.valueOf(cursor.getInt(4)));
-            shopName.setText(cursor.getString(6));
+            mItemName.setText(cursor.getString(1));
+            mItemNum.setText(String.valueOf(cursor.getInt(2)));
+            mItemUnit.setText(cursor.getString(3));
+            mItemPrice.setText(String.valueOf(cursor.getInt(4)));
+            mCurrency.setText(cursor.getString(5));
+            mShopName.setText(cursor.getString(7));
         }
-        builder.setTitle("Modify item")
-                .setView(inputView)
+        builder.setTitle("Copy item")
+                .setView(mInputView)
                 .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         boolean isFinishDialog = true;
-                        if (itemName.getText().toString().trim().equals("")) {
-                            if (itemName.getText().toString().trim().equals("")) {
-                                itemName.setHint("Please enter item name");
+                        if (mItemName.getText().toString().trim().equals("")) {
+                            if (mItemName.getText().toString().trim().equals("")) {
+                                mItemName.setHint("Please enter item name");
                             }
                             isFinishDialog = false;
                         } else {
                             //insert data to database
-                            int num = 0;
-                            int price = 0;
-                            if (!itemNum.getText().toString().equals("")) {
-                                num = Integer.parseInt(itemNum.getText().toString());
-                            }
-                            if (!itemPrice.getText().toString().equals("")) {
-                                price = Integer.parseInt(itemPrice.getText().toString());
-                            }
-                            mMyCreateDBTable.insert(itemName.getText().toString(), num,
-                                    itemUnit.getText().toString(), price,
-                                    shopName.getText().toString());
+                            insertData();
                             loadValue(false);
                         }
                         if (!isFinishDialog) {
@@ -344,5 +304,29 @@ public class ShoppingListActivity extends AppCompatActivity {
                     }
                 })
                 .show();
+    }
+
+    private void initDialogLayout() {
+        mInputView = getLayoutInflater().inflate(R.layout.shopping_list_dialog, null);
+        mItemName = (EditText) mInputView.findViewById(R.id.item_name);
+        mItemNum = (EditText) mInputView.findViewById(R.id.item_num);
+        mItemUnit = (EditText) mInputView.findViewById(R.id.item_unit);
+        mItemPrice = (EditText) mInputView.findViewById(R.id.item_price);
+        mCurrency = (EditText) mInputView.findViewById(R.id.currency);
+        mShopName = (EditText) mInputView.findViewById(R.id.shop_name);
+    }
+
+    private void insertData() {
+        int num = 1;
+        int price = 0;
+        if (!mItemNum.getText().toString().equals("")) {
+            num = Integer.parseInt(mItemNum.getText().toString());
+        }
+        if (!mItemPrice.getText().toString().equals("")) {
+            price = Integer.parseInt(mItemPrice.getText().toString());
+        }
+        mMyCreateDBTable.insertToTable(MainActivity.TABLE_NAME + mTableId, mItemName.getText().toString(), num,
+                mItemUnit.getText().toString(), price, mCurrency.getText().toString(),
+                mShopName.getText().toString());
     }
 }
