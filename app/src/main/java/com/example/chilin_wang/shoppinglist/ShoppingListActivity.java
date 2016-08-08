@@ -1,34 +1,82 @@
 package com.example.chilin_wang.shoppinglist;
 
+import android.Manifest;
 import android.app.AlertDialog;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 
 public class ShoppingListActivity extends AppCompatActivity {
 
     private static final int MENU_STATS_ADD = Menu.FIRST + 1;
-    View mInputView;
-    EditText mItemName;
-    EditText mItemNum;
-    EditText mItemUnit;
-    EditText mItemPrice;
-    EditText mCurrency;
-    EditText mShopName;
+    private final static int CAMERA = 66;
+    private final static int PHOTO = 99;
+    private View mInputView;
+    private EditText mItemName;
+    private EditText mItemNum;
+    private EditText mItemUnit;
+    private EditText mItemPrice;
+    private EditText mCurrency;
+    private EditText mShopName;
+    private ImageView mCalculator, mPhotoImage;
+    private String mPhotoUri;
+    private DisplayMetrics mPhone;
     private MyCreateDBTable mMyCreateDBTable;
     private int mTableId;
     private LinearLayout mLinearLayout;
+    private View.OnClickListener choosePhotoImage = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent intent = new Intent();
+            if (Build.VERSION.SDK_INT < 19) {
+                intent = new Intent();
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+            } else {
+                intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+            }
+            intent.setType("image/*");
+            startActivityForResult(intent, PHOTO);
+        }
+    };
     private View.OnClickListener modifyItemListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -49,6 +97,8 @@ public class ShoppingListActivity extends AppCompatActivity {
         mMyCreateDBTable = new MyCreateDBTable(getApplicationContext());
         mMyCreateDBTable.openTable(MainActivity.TABLE_NAME + mTableId);
         mLinearLayout = (LinearLayout) findViewById(R.id.viewObj);
+        mPhone = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(mPhone);
         loadValue(true);
     }
 
@@ -71,6 +121,11 @@ public class ShoppingListActivity extends AppCompatActivity {
             default:
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
     }
 
     @Override
@@ -100,6 +155,58 @@ public class ShoppingListActivity extends AppCompatActivity {
                 return true;
             }
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PHOTO && data != null) {
+            Uri uri = data.getData();
+            mPhotoUri = String.valueOf(uri);
+            Log.d(MainActivity.TAG, "uri = " + uri + "\n mPhotoUri =" + mPhotoUri);
+            showPhoto();
+        }
+        if(requestCode == CAMERA && resultCode == RESULT_OK){
+            Bundle extras = data.getExtras();
+            Bitmap bitmap = (Bitmap) extras.get("data");
+            mPhotoImage.setImageBitmap(bitmap);
+            try{
+                String path = Environment.getExternalStorageDirectory().toString();
+                File file = new File(path,"Image.png");
+                FileOutputStream out = new FileOutputStream(file);
+                bitmap.compress(Bitmap.CompressFormat.PNG,90,out);
+                out.flush();
+                out.close();
+            } catch(Exception e){
+                Log.d(MainActivity.TAG, "Exception " +e);
+                e.printStackTrace();
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void showPhoto() {
+        Uri uri = Uri.parse(mPhotoUri);
+        ContentResolver cr = this.getContentResolver();
+        try {
+            Bitmap bitmap = BitmapFactory.decodeStream(cr.openInputStream(uri));
+            if(bitmap.getWidth() > mPhone.widthPixels){
+                float mScale = (float) mPhone.widthPixels / bitmap.getWidth();
+                Matrix matrix = new Matrix();
+                matrix.postScale(mScale,mScale);
+                Bitmap mScaleBitmap = Bitmap.createBitmap(bitmap,
+                        0,
+                        0,
+                        bitmap.getWidth(),
+                        bitmap.getHeight(),
+                        matrix,
+                        true);
+                mPhotoImage.setImageBitmap(mScaleBitmap);
+            } else {
+                mPhotoImage.setImageBitmap(bitmap);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void loadValue(boolean isInit) {
@@ -132,6 +239,7 @@ public class ShoppingListActivity extends AppCompatActivity {
     }
 
     private void addNewItem() {
+        mPhotoUri = "";
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         initDialogLayout();
         builder.setTitle("Add new item")
@@ -184,17 +292,9 @@ public class ShoppingListActivity extends AppCompatActivity {
 
     private void modifyItem(View v) {
         final View view = v;
-        Cursor cursor = mMyCreateDBTable.query(v.getId());
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         initDialogLayout();
-        if (cursor.moveToFirst()) {
-            mItemName.setText(cursor.getString(1));
-            mItemNum.setText(String.valueOf(cursor.getInt(2)));
-            mItemUnit.setText(cursor.getString(3));
-            mItemPrice.setText(String.valueOf(cursor.getInt(4)));
-            mCurrency.setText(cursor.getString(5));
-            mShopName.setText(cursor.getString(7));
-        }
+        loadDialogLayoutValues(view);
         builder.setTitle("Modify item")
                 .setView(mInputView)
                 .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
@@ -208,8 +308,8 @@ public class ShoppingListActivity extends AppCompatActivity {
                         } else {
                             //update data to database
                             mMyCreateDBTable.update(view.getId(), mItemName.getText().toString(), Integer.parseInt(mItemNum.getText().toString()),
-                                    mItemUnit.getText().toString(), Integer.parseInt(mItemPrice.getText().toString()),
-                                    mCurrency.getText().toString(), mShopName.getText().toString());
+                                    mItemUnit.getText().toString(), Float.parseFloat(mItemPrice.getText().toString()),
+                                    mCurrency.getText().toString(), mShopName.getText().toString(), mPhotoUri);
                             mLinearLayout.removeAllViews();
                             loadValue(true);
                         }
@@ -247,17 +347,10 @@ public class ShoppingListActivity extends AppCompatActivity {
     }
 
     private void copyItem(View v) {
-        Cursor cursor = mMyCreateDBTable.query(v.getId());
+        final View view = v;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         initDialogLayout();
-        if (cursor.moveToFirst()) {
-            mItemName.setText(cursor.getString(1));
-            mItemNum.setText(String.valueOf(cursor.getInt(2)));
-            mItemUnit.setText(cursor.getString(3));
-            mItemPrice.setText(String.valueOf(cursor.getInt(4)));
-            mCurrency.setText(cursor.getString(5));
-            mShopName.setText(cursor.getString(7));
-        }
+        loadDialogLayoutValues(view);
         builder.setTitle("Copy item")
                 .setView(mInputView)
                 .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
@@ -314,19 +407,96 @@ public class ShoppingListActivity extends AppCompatActivity {
         mItemPrice = (EditText) mInputView.findViewById(R.id.item_price);
         mCurrency = (EditText) mInputView.findViewById(R.id.currency);
         mShopName = (EditText) mInputView.findViewById(R.id.shop_name);
+        mCalculator = (ImageView) mInputView.findViewById(R.id.calculator_image);
+        mPhotoImage = (ImageView) mInputView.findViewById(R.id.photo_image);
+        ImageView launchCamera = (ImageView) mInputView.findViewById(R.id.launch_camera);
+        ImageView choosePhoto = (ImageView) mInputView.findViewById(R.id.choose_photo);
+        mItemNum.setText("1");
+        mItemPrice.setText("0");
+        mItemName.setSelectAllOnFocus(true);
+        mItemNum.setSelectAllOnFocus(true);
+        mItemUnit.setSelectAllOnFocus(true);
+        mCurrency.setSelectAllOnFocus(true);
+        mItemPrice.setSelectAllOnFocus(true);
+        mShopName.setSelectAllOnFocus(true);
+        mPhotoImage.setOnClickListener(choosePhotoImage);
+        mPhotoImage.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                mPhotoUri = "";
+                mPhotoImage.setImageDrawable(null);
+                return false;
+            }
+        });
+        choosePhoto.setOnClickListener(choosePhotoImage);
+        launchCamera.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent_camera = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                startActivityForResult(intent_camera, CAMERA);
+            }
+        });
+
+        mCalculator.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ArrayList<HashMap<String, Object>> items = new ArrayList<HashMap<String, Object>>();
+                final PackageManager pm = getPackageManager();
+                List<PackageInfo> packs = pm.getInstalledPackages(0);
+                for (PackageInfo pi : packs) {
+                    if (pi.packageName.toString().toLowerCase().contains("calcul")) {
+                        HashMap<String, Object> map = new HashMap<String, Object>();
+                        map.put("appName", pi.applicationInfo.loadLabel(pm));
+                        Object packageName = map.put("packageName", pi.packageName);
+                        items.add(map);
+                    }
+                }
+                if (items.size() >= 1) {
+                    String packageName = (String) items.get(0).get("packageName");
+                    Intent i = pm.getLaunchIntentForPackage(packageName);
+                    if (i != null)
+                        startActivity(i);
+                } else {
+                    // Application not found
+                }
+            }
+        });
+    }
+
+    private static File getOutputMediaFile(){
+        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES), "CameraDemo");
+
+        if (!mediaStorageDir.exists()){
+            if (!mediaStorageDir.mkdirs()){
+                return null;
+            }
+        }
+
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        return new File(mediaStorageDir.getPath() + File.separator +
+                "IMG_"+ timeStamp + ".jpg");
+    }
+
+    private void loadDialogLayoutValues(View v) {
+        Cursor cursor = mMyCreateDBTable.query(v.getId());
+        if (cursor.moveToFirst()) {
+            mItemName.setText(cursor.getString(1));
+            mItemNum.setText(String.valueOf(cursor.getInt(2)));
+            mItemUnit.setText(cursor.getString(3));
+            mItemPrice.setText(String.valueOf(cursor.getFloat(4)));
+            mCurrency.setText(cursor.getString(5));
+            mShopName.setText(cursor.getString(7));
+            mPhotoUri = cursor.getString(8);
+            showPhoto();
+        }
     }
 
     private void insertData() {
-        int num = 1;
-        int price = 0;
-        if (!mItemNum.getText().toString().equals("")) {
-            num = Integer.parseInt(mItemNum.getText().toString());
-        }
-        if (!mItemPrice.getText().toString().equals("")) {
-            price = Integer.parseInt(mItemPrice.getText().toString());
-        }
+        int num = Integer.parseInt(mItemNum.getText().toString());
+        float price = Float.parseFloat(mItemPrice.getText().toString());
         mMyCreateDBTable.insertToTable(MainActivity.TABLE_NAME + mTableId, mItemName.getText().toString(), num,
                 mItemUnit.getText().toString(), price, mCurrency.getText().toString(),
-                mShopName.getText().toString());
+                mShopName.getText().toString(), mPhotoUri);
     }
 }

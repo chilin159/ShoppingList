@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -66,6 +67,11 @@ public class MainActivity extends AppCompatActivity {
             default:
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
     }
 
     @Override
@@ -200,7 +206,7 @@ public class MainActivity extends AppCompatActivity {
                         if (cursor.getCount() > 0) {
                             cursor.moveToFirst();
                             do {
-                                mMyCreateDBTable.insertToTable(TABLE_NAME + mTableNum, cursor.getString(1), cursor.getInt(2), cursor.getString(3), cursor.getInt(4), cursor.getString(5), cursor.getString(7));
+                                mMyCreateDBTable.insertToTable(TABLE_NAME + mTableNum, cursor.getString(1), cursor.getInt(2), cursor.getString(3), cursor.getFloat(4), cursor.getString(5), cursor.getString(7), cursor.getString(8));
                             } while (cursor.moveToNext());
                         }
                         cursor.close();

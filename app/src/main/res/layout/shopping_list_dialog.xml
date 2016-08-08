@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+<LinearLayout  android:layout_width="match_parent"
+    android:layout_height="match_parent" android:orientation="vertical"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:orientation="vertical">
+    android:focusable="true"
+    android:focusableInTouchMode="true">
     <TableLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -21,7 +27,8 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="3"
-                android:singleLine="true"/>
+                android:imeOptions="flagNoExtractUi"
+                android:singleLine="true" />
         </TableRow>
         <TableRow>
             <TextView
@@ -34,6 +41,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:imeOptions="flagNoExtractUi"
                 android:inputType="number"
                 android:singleLine="true"/>
             <TextView
@@ -46,6 +54,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:imeOptions="flagNoExtractUi"
                 android:singleLine="true"/>
         </TableRow>
         <TableRow>
@@ -59,7 +68,8 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:inputType="number"
+                android:imeOptions="flagNoExtractUi"
+                android:inputType="numberDecimal|numberSigned"
                 android:singleLine="true"/>
             <TextView
                 android:layout_width="0dp"
@@ -71,6 +81,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:imeOptions="flagNoExtractUi"
                 android:singleLine="true"/>
         </TableRow>
         <TableRow>
@@ -78,14 +89,48 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Shop"/>
+                android:text="Notes"/>
             <EditText
                 android:id="@+id/shop_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="3"
-                android:imeOptions="actionDone"
+                android:imeOptions="actionDone|flagNoExtractUi"
                 android:singleLine="true"/>
         </TableRow>
     </TableLayout>
+    <LinearLayout
+        android:id="@+id/photo_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:orientation="horizontal">
+        <ImageView
+            android:id="@+id/choose_photo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="20dp"
+            android:layout_gravity="center"
+            android:background="@drawable/ic_collections_black_24dp"/>
+        <ImageView
+            android:id="@+id/launch_camera"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginEnd="20dp"
+            android:background="@drawable/ic_add_a_photo_black_24dp"
+            android:visibility="visible"/>
+        <ImageView
+            android:id="@+id/calculator_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/calculator"/>
+    </LinearLayout>
+    <ImageView
+        android:id="@+id/photo_image"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#F5F5F5"/>
 </LinearLayout>
+</ScrollView>
