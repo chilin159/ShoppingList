@@ -62,19 +62,11 @@ public class ShoppingListActivity extends AppCompatActivity {
     private MyCreateDBTable mMyCreateDBTable;
     private int mTableId;
     private LinearLayout mLinearLayout;
+    private boolean mIsEnterCamera = false;
     private View.OnClickListener choosePhotoImage = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            Intent intent = new Intent();
-            if (Build.VERSION.SDK_INT < 19) {
-                intent = new Intent();
-                intent.setAction(Intent.ACTION_GET_CONTENT);
-            } else {
-                intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                intent.addCategory(Intent.CATEGORY_OPENABLE);
-            }
-            intent.setType("image/*");
-            startActivityForResult(intent, PHOTO);
+            choosePhotoImageClick();
         }
     };
     private View.OnClickListener modifyItemListener = new View.OnClickListener() {
@@ -158,28 +150,21 @@ public class ShoppingListActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume(){
+        Log.d(MainActivity.TAG, "onResume");
+        if(mIsEnterCamera){
+            choosePhotoImageClick();
+            mIsEnterCamera = false;
+        }
+        super.onResume();
+    }
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == PHOTO && data != null) {
             Uri uri = data.getData();
             mPhotoUri = String.valueOf(uri);
             Log.d(MainActivity.TAG, "uri = " + uri + "\n mPhotoUri =" + mPhotoUri);
             showPhoto();
-        }
-        if(requestCode == CAMERA && resultCode == RESULT_OK){
-            Bundle extras = data.getExtras();
-            Bitmap bitmap = (Bitmap) extras.get("data");
-            mPhotoImage.setImageBitmap(bitmap);
-            try{
-                String path = Environment.getExternalStorageDirectory().toString();
-                File file = new File(path,"Image.png");
-                FileOutputStream out = new FileOutputStream(file);
-                bitmap.compress(Bitmap.CompressFormat.PNG,90,out);
-                out.flush();
-                out.close();
-            } catch(Exception e){
-                Log.d(MainActivity.TAG, "Exception " +e);
-                e.printStackTrace();
-            }
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -432,8 +417,9 @@ public class ShoppingListActivity extends AppCompatActivity {
         launchCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent_camera = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-                startActivityForResult(intent_camera, CAMERA);
+                mIsEnterCamera = true;
+                Intent intent_camera = new Intent(android.provider.MediaStore.INTENT_ACTION_VIDEO_CAMERA);
+                startActivity(intent_camera);
             }
         });
 
@@ -490,6 +476,19 @@ public class ShoppingListActivity extends AppCompatActivity {
             mPhotoUri = cursor.getString(8);
             showPhoto();
         }
+    }
+
+    private void choosePhotoImageClick(){
+        Intent intent;
+        if (Build.VERSION.SDK_INT < 19) {
+            intent = new Intent();
+            intent.setAction(Intent.ACTION_GET_CONTENT);
+        } else {
+            intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+        }
+        intent.setType("image/*");
+        startActivityForResult(intent, PHOTO);
     }
 
     private void insertData() {
