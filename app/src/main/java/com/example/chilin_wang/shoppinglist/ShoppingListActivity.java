@@ -47,6 +47,7 @@ import java.util.List;
 public class ShoppingListActivity extends AppCompatActivity {
 
     private static final int MENU_STATS_ADD = Menu.FIRST + 1;
+    private static final int MENU_STATS_SORT = Menu.FIRST + 2;
     private final static int CAMERA = 66;
     private final static int PHOTO = 99;
     private View mInputView;
@@ -98,6 +99,10 @@ public class ShoppingListActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuItem addTable = menu.add(0, MENU_STATS_ADD, 0, "Add").setIcon(R.drawable.ic_add_black_24dp);
         addTable.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        menu.add(0, MENU_STATS_SORT, 0, "Sort by item");
+        menu.add(0, MENU_STATS_SORT+1, 0, "Sort by price");
+        menu.add(0, MENU_STATS_SORT + 2, 0, "Sort by average price");
+        menu.add(0, MENU_STATS_SORT + 3, 0, "Sort by note");
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -106,6 +111,18 @@ public class ShoppingListActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case MENU_STATS_ADD:
                 addNewItem();
+                break;
+            case MENU_STATS_SORT:
+                orderItem(0);
+                break;
+            case MENU_STATS_SORT+1:
+                orderItem(1);
+                break;
+            case MENU_STATS_SORT+2:
+                orderItem(2);
+                break;
+            case MENU_STATS_SORT+3:
+                orderItem(3);
                 break;
             case android.R.id.home:
                 super.onBackPressed();
@@ -497,5 +514,17 @@ public class ShoppingListActivity extends AppCompatActivity {
         mMyCreateDBTable.insertToTable(MainActivity.TABLE_NAME + mTableId, mItemName.getText().toString(), num,
                 mItemUnit.getText().toString(), price, mCurrency.getText().toString(),
                 mShopName.getText().toString(), mPhotoUri);
+    }
+
+    private void orderItem(int order){
+        Cursor cursor = mMyCreateDBTable.orderItem(order);
+        if (cursor.getCount() > 0 && cursor != null) {
+            mLinearLayout.removeAllViews();
+            cursor.moveToFirst();
+            do {
+                addNewButton(this, cursor, cursor.getInt(0));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
     }
 }

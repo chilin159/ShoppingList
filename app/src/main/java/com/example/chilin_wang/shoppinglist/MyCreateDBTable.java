@@ -124,6 +124,20 @@ public class MyCreateDBTable {
         return db.query(TABLE_NAME, null, where, null, null, null, null, null);
     }
 
+    public Cursor orderItem(int order){
+        switch(order){
+            case 0:
+                return db.query(TABLE_NAME, null, null, null, null, null, ITEM_NAME, null);
+            case 1:
+                return db.query(TABLE_NAME, null, null, null, null, null, ITEM_PRICE, null);
+            case 2:
+                return db.query(TABLE_NAME, null, null, null, null, null, AVERAGE_PRICE, null);
+            case 3:
+                return db.query(TABLE_NAME, null, null, null, null, null, SHOP_NAME, null);
+        }
+        return null;
+    }
+
     public void update(int id, String itemName, int itemNum, String itemUnit, float itemPrice, String currency, String shopName, String photoUri) {
         float averagePrice = (float) itemPrice / itemNum;
         ContentValues cv = new ContentValues();
