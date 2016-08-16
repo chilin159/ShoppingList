@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/app/src/main/res/drawable-hdpi/ic_delete_black_24dp.png" charset="x-windows-950" />
+    <file url="file://$PROJECT_DIR$/app/src/main/res/drawable-hdpi/ic_done_black_24dp.png" charset="x-windows-950" />
+    <file url="file://$PROJECT_DIR$/app/src/main/res/drawable-hdpi/ic_keyboard_arrow_right_black_24dp.png" charset="x-windows-950" />
+    <file url="file://$PROJECT_DIR$/app/src/main/res/drawable-mdpi/ic_delete_black_24dp.png" charset="x-windows-950" />
+    <file url="file://$PROJECT_DIR$/app/src/main/res/drawable-mdpi/ic_done_black_24dp.png" charset="x-windows-950" />
+    <file url="file://$PROJECT_DIR$/app/src/main/res/drawable-mdpi/ic_keyboard_arrow_right_black_24dp.png" charset="x-windows-950" />
+    <file url="file://$PROJECT_DIR$/app/src/main/res/drawable-xhdpi/ic_delete_black_24dp.png" charset="x-windows-950" />
+    <file url="file://$PROJECT_DIR$/app/src/main/res/drawable-xhdpi/ic_done_black_24dp.png" charset="x-windows-950" />
+    <file url="file://$PROJECT_DIR$/app/src/main/res/drawable-xhdpi/ic_keyboard_arrow_right_black_24dp.png" charset="x-windows-950" />
+    <file url="file://$PROJECT_DIR$/app/src/main/res/drawable-xxhdpi/ic_delete_black_24dp.png" charset="x-windows-950" />
+    <file url="file://$PROJECT_DIR$/app/src/main/res/drawable-xxhdpi/ic_done_black_24dp.png" charset="x-windows-950" />
+    <file url="file://$PROJECT_DIR$/app/src/main/res/drawable-xxhdpi/ic_keyboard_arrow_right_black_24dp.png" charset="x-windows-950" />
+    <file url="file://$PROJECT_DIR$/app/src/main/res/drawable-xxxhdpi/ic_delete_black_24dp.png" charset="x-windows-950" />
+    <file url="file://$PROJECT_DIR$/app/src/main/res/drawable-xxxhdpi/ic_done_black_24dp.png" charset="x-windows-950" />
+    <file url="file://$PROJECT_DIR$/app/src/main/res/drawable-xxxhdpi/ic_keyboard_arrow_right_black_24dp.png" charset="x-windows-950" />
+    <file url="file://$PROJECT_DIR$/app/src/main/res/mipmap-hdpi/ic_done_black_24dp.png" charset="x-windows-950" />
     <file url="PROJECT" charset="UTF-8" />
   </component>
 </project>

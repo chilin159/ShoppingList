@@ -30,4 +30,5 @@
     <string name="dialog_notes">備註</string>
     <string name="default_unit">個</string>
     <string name="default_currency">台幣</string>
+    <string name="slide_to_delete">滑動以刪除</string>
 </resources>

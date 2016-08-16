@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.net.Uri;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -19,6 +20,7 @@ public class ShoppingListView extends LinearLayout {
 
     private TextView mItemName, mItemNum, mItemUnit, mItemPrice, mAveragePrice, mShopName, mCurrency, mPriceUnit;
     private ImageView mPhotoImage;
+    private LinearLayout mSlideDelteLayout;
     private Context mContext;
 
     public ShoppingListView(Context context) {
@@ -35,6 +37,7 @@ public class ShoppingListView extends LinearLayout {
         mShopName = (TextView) findViewById(R.id.shop_name);
         mPriceUnit = (TextView) findViewById(R.id.price_unit);
         mPhotoImage = (ImageView) findViewById(R.id.photo_image);
+        mSlideDelteLayout = (LinearLayout) findViewById(R.id.slide_delete);
     }
 
     public void setShoppingList(Cursor cursor) {
@@ -65,5 +68,13 @@ public class ShoppingListView extends LinearLayout {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void showSlideDeleteLayout(){
+        mSlideDelteLayout.setVisibility(View.VISIBLE);
+    }
+
+    public void hideSlideDeleteLayout(){
+        mSlideDelteLayout.setVisibility(View.GONE);
     }
 }

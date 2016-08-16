@@ -1,5 +1,6 @@
 package com.example.chilin_wang.shoppinglist;
 
+import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -10,8 +11,10 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -33,6 +36,10 @@ public class MainActivity extends AppCompatActivity {
     private MyCreateDBTable mMyCreateDBTable;
     private  boolean[] mCheckedList;
     private boolean mHasChecked;
+    private float historicX = Float.NaN, historicY = Float.NaN;
+    private boolean mIsDeleteItemBySlide = false;
+    private boolean mIsFirstAddButton;
+    static final int DELTA = 150;
     private OnClickListener enterListListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -158,11 +165,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        if(mIsDeleteItemBySlide)return;
         super.onCreateContextMenu(menu, v, menuInfo);
         final View view = v;
         MenuItem rename = menu.add(0, 0, 0, R.string.menu_rename);
         MenuItem copy = menu.add(0, 1, 0, R.string.menu_copy);
-        MenuItem delete = menu.add(0, 2, 0, R.string.menu_delete);
         MenuItem share = menu.add(0, 2, 0, R.string.menu_share);
         rename.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
@@ -175,24 +182,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 copyTable(view);
-                return true;
-            }
-        });
-        delete.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                new AlertDialog.Builder(MainActivity.this)
-                        .setTitle(getString(R.string.delete_shopping_list))
-                        .setMessage(getString(R.string.confirm_to_delete))
-                        .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                mLinearLayout.removeView(view);
-                                //deleate database table
-                                mMyCreateDBTable.deleteTable(TABLE_NAME + view.getId(), view.getId());
-                            }
-                        })
-                        .setNegativeButton(android.R.string.cancel, null)
-                        .show();
                 return true;
             }
         });
@@ -222,6 +211,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initViews() {
+        mIsFirstAddButton = true;
         //init table list
         Cursor cursor = mMyCreateDBTable.getTableList();
         if (cursor.getCount() > 0) {
@@ -283,10 +273,41 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void addNewButton(Context context, String text, int id) {
+        if(mIsFirstAddButton) {
+            mLinearLayout.addView(new SlideDeleteView(this));
+            mIsFirstAddButton = false;
+        }
         Button btn = new Button(context);
         btn.setText(text);
         btn.setId(id);
         btn.setOnClickListener(enterListListener);
+        btn.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        historicX = event.getX();
+                        historicY = event.getY();
+                        break;
+                    case MotionEvent.ACTION_CANCEL:
+                    case MotionEvent.ACTION_UP:
+                        if (event.getX() - historicX > DELTA) {
+                            mLinearLayout.removeView(v);
+                            //deleate database table
+                            mMyCreateDBTable.deleteTable(TABLE_NAME + v.getId(), v.getId());
+                            hideSlideDeleteViewIfClear();
+                        }
+                        mIsDeleteItemBySlide = false;
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        if (event.getX() - historicX > 15) {
+                            mIsDeleteItemBySlide = true;
+                        }
+                        break;
+                }
+                return false;
+            }
+        });
         registerForContextMenu(btn);
         mLinearLayout.addView(btn);
     }
@@ -387,6 +408,15 @@ public class MainActivity extends AppCompatActivity {
         }
         cursor.close();
         initViews();
+    }
+
+    private void hideSlideDeleteViewIfClear(){
+        Cursor cursor = mMyCreateDBTable.getTableList();
+        if (cursor.getCount() == 0) {
+            mLinearLayout.removeAllViews();
+            mIsFirstAddButton = true;
+        }
+        cursor.close();
     }
 
 }

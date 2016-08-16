@@ -13,6 +13,7 @@ import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Build;
@@ -24,7 +25,11 @@ import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.animation.LayoutAnimationController;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -42,7 +47,9 @@ import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 public class ShoppingListActivity extends AppCompatActivity {
 
     private static final int MENU_STATS_ADD = Menu.FIRST + 1;
-    private static final int MENU_STATS_SORT = Menu.FIRST + 2;
+    private static final int MENU_STATS_SORT = Menu.FIRST + 4;
+    private static final int MENU_STATS_DELETE = Menu.FIRST + 2;
+    private static final int MENU_STATS_DELETE_DONE = Menu.FIRST + 3;
     private final static int PHOTO = 99;
     private final static int REQUEST_EXTERNAL_STORAGE = 0;
     private View mInputView;
@@ -60,6 +67,10 @@ public class ShoppingListActivity extends AppCompatActivity {
     private LinearLayout mLinearLayout;
     private boolean mIsEnterCamera = false;
     private boolean mIsFirstRequestPermission = false;
+    private boolean mIsFirstAddButton;
+    private MenuItem mDeleteTableMenu,mDeleteDoneMenu;
+    private float historicX = Float.NaN, historicY = Float.NaN;
+    private boolean mIsDeleteItemBySlide = false;
     private View.OnClickListener choosePhotoImage = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -69,7 +80,7 @@ public class ShoppingListActivity extends AppCompatActivity {
     private View.OnClickListener modifyItemListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            modifyItem(v);
+                modifyItem(v);
         }
     };
 
@@ -86,6 +97,7 @@ public class ShoppingListActivity extends AppCompatActivity {
         mMyCreateDBTable = new MyCreateDBTable(getApplicationContext());
         mMyCreateDBTable.openTable(MainActivity.TABLE_NAME + mTableId);
         mLinearLayout = (LinearLayout) findViewById(R.id.viewObj);
+        mIsFirstAddButton = true;
         mPhone = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(mPhone);
         Thread thread = new Thread(new Runnable() {
@@ -146,12 +158,12 @@ public class ShoppingListActivity extends AppCompatActivity {
         mLinearLayout.removeAllViews();
     }
 
-    @Override
+        @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+            if(mIsDeleteItemBySlide)return;
         super.onCreateContextMenu(menu, v, menuInfo);
         final View view = v;
         MenuItem copy = menu.add(0, 0, 0, R.string.menu_copy);
-        MenuItem delete = menu.add(0, 1, 0, R.string.menu_delete);
         MenuItem share = menu.add(0,2,0,R.string.menu_share);
         copy.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
@@ -160,43 +172,25 @@ public class ShoppingListActivity extends AppCompatActivity {
                 return true;
             }
         });
-        delete.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                new AlertDialog.Builder(ShoppingListActivity.this)
-                        .setTitle(getString(R.string.delete_item))
-                        .setMessage(getString(R.string.confirm_to_delete))
-                        .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                mLinearLayout.removeView(view);
-                                //deleate database item
-                                mMyCreateDBTable.delete(view.getId());
-                            }
-                        })
-                        .setNegativeButton(android.R.string.cancel, null)
-                        .show();
-                return true;
-            }
-        });
-        share.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                Cursor cursor = mMyCreateDBTable.query(view.getId());
-                if (cursor.moveToFirst()) {
-                    Intent intent = new Intent(Intent.ACTION_SEND);
-                    String msgTitle = cursor.getString(1);
-                    String msgText = msgTitle + "\n" + String.valueOf(cursor.getInt(2)) + cursor.getString(3) +
-                            " " + String.valueOf(cursor.getFloat(4)) + cursor.getString(5) +
-                            "\n" + String.valueOf(cursor.getFloat(6)) + cursor.getString(5) + "/" + cursor.getString(3) +
-                            "\n" + cursor.getString(7);
-                    intent.setType("text/plain");
-                    intent.putExtra(Intent.EXTRA_TEXT, msgText);
-                    startActivity(Intent.createChooser(intent, getString(R.string.menu_share)));
+            share.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    Cursor cursor = mMyCreateDBTable.query(view.getId());
+                    if (cursor.moveToFirst()) {
+                        Intent intent = new Intent(Intent.ACTION_SEND);
+                        String msgTitle = cursor.getString(1);
+                        String msgText = msgTitle + "\n" + String.valueOf(cursor.getInt(2)) + cursor.getString(3) +
+                                " " + String.valueOf(cursor.getFloat(4)) + cursor.getString(5) +
+                                "\n" + String.valueOf(cursor.getFloat(6)) + cursor.getString(5) + "/" + cursor.getString(3) +
+                                "\n" + cursor.getString(7);
+                        intent.setType("text/plain");
+                        intent.putExtra(Intent.EXTRA_TEXT, msgText);
+                        startActivity(Intent.createChooser(intent, getString(R.string.menu_share)));
+                    }
+                    cursor.close();
+                    return true;
                 }
-                cursor.close();
-                return true;
-            }
-        });
+            });
     }
 
     @Override
@@ -283,10 +277,49 @@ public class ShoppingListActivity extends AppCompatActivity {
     }
 
     private void addNewButton(Context context, Cursor cursor, int id) {
-        ShoppingListView btn = new ShoppingListView(context);
+        if(mIsFirstAddButton) {
+            mLinearLayout.addView(new SlideDeleteView(this));
+            mIsFirstAddButton = false;
+        }
+        final ShoppingListView btn = new ShoppingListView(context);
         btn.setShoppingList(cursor);
         btn.setId(id);
         btn.setOnClickListener(modifyItemListener);
+        btn.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        Log.d(MainActivity.TAG,"ACTION_DOWN");
+                        historicX = event.getX();
+                        historicY = event.getY();
+                        break;
+                    case MotionEvent.ACTION_CANCEL:
+                        Log.d(MainActivity.TAG,"ACTION_CANCEL");
+                    case MotionEvent.ACTION_UP:
+                        Log.d(MainActivity.TAG,"ACTION_UP");
+                        if (event.getX() - historicX > MainActivity.DELTA) {
+                            mLinearLayout.removeView(v);
+                            //deleate database item
+                            mMyCreateDBTable.delete(v.getId());
+                            hideSlideDeleteViewIfClear();
+                        }
+                        mIsDeleteItemBySlide = false;
+                        btn.hideSlideDeleteLayout();
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        Log.d(MainActivity.TAG, "ACTION_MOVE");
+                        if(event.getX() - historicX > 5){
+                            btn.showSlideDeleteLayout();
+                        }
+                        if(event.getX() - historicX > 15){
+                            mIsDeleteItemBySlide = true;
+                        }
+                        break;
+                }
+                return false;
+            }
+        });
         registerForContextMenu(btn);
         final ShoppingListView sv = btn;
         runOnUiThread(new Runnable() {
@@ -482,8 +515,10 @@ public class ShoppingListActivity extends AppCompatActivity {
         mPhotoImage = (ImageView) mInputView.findViewById(R.id.photo_image);
         ImageView launchCamera = (ImageView) mInputView.findViewById(R.id.launch_camera);
         ImageView choosePhoto = (ImageView) mInputView.findViewById(R.id.choose_photo);
-        mItemNum.setText("1");
-        mItemPrice.setText("0");
+        mItemNum.setHint("1");
+        mItemPrice.setHint("0");
+        mItemUnit.setHint(getString(R.string.default_unit));
+        mCurrency.setHint(getString(R.string.default_currency));
         mItemName.setSelectAllOnFocus(true);
         mItemNum.setSelectAllOnFocus(true);
         mItemUnit.setSelectAllOnFocus(true);
@@ -590,11 +625,11 @@ public class ShoppingListActivity extends AppCompatActivity {
         if(!mItemUnit.getText().toString().equals("")){
             unit = mItemUnit.getText().toString();
         }
-        if(!mCurrency.getText().toString().equals("")){
+        if (!mCurrency.getText().toString().equals("")) {
             currency = mCurrency.getText().toString();
         }
         mMyCreateDBTable.insertToTable(MainActivity.TABLE_NAME + mTableId, mItemName.getText().toString(), num,
-               unit, price, currency,
+                unit, price, currency,
                 mShopName.getText().toString(), mPhotoUri);
     }
 
@@ -602,10 +637,20 @@ public class ShoppingListActivity extends AppCompatActivity {
         Cursor cursor = mMyCreateDBTable.orderItem(order);
         if (cursor.getCount() > 0 && cursor != null) {
             mLinearLayout.removeAllViews();
+            mLinearLayout.addView(new SlideDeleteView(this));
             cursor.moveToFirst();
             do {
                 addNewButton(this, cursor, cursor.getInt(0));
             } while (cursor.moveToNext());
+        }
+        cursor.close();
+    }
+
+    private void hideSlideDeleteViewIfClear(){
+        Cursor cursor = mMyCreateDBTable.getData();
+        if (cursor.getCount() == 0) {
+            mLinearLayout.removeAllViews();
+            mIsFirstAddButton = true;
         }
         cursor.close();
     }
