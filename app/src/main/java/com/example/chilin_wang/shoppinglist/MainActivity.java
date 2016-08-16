@@ -18,15 +18,21 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 
+import java.util.ArrayList;
+
 public class MainActivity extends AppCompatActivity {
     static final String TAG = "test";
     static final String TABLE_NAME = "table";
     static final String TABLE_ID = "table_id";
     static final String TABLE_NAME_BY_USER = "table_name_by_user";
     private static final int MENU_STATS_ADD = Menu.FIRST + 1;
+    private static final int MENU_STATS_MERGE = Menu.FIRST + 2;
+    private static final int MENU_STATS_DELETE = Menu.FIRST + 3;
     private LinearLayout mLinearLayout;
     private int mTableNum = 1;
     private MyCreateDBTable mMyCreateDBTable;
+    private  boolean[] mCheckedList;
+    private boolean mHasChecked;
     private OnClickListener enterListListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -53,8 +59,10 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuItem addTable = menu.add(0, MENU_STATS_ADD, 0, "Add").setIcon(R.drawable.ic_add_black_24dp);
+        MenuItem addTable = menu.add(0, MENU_STATS_ADD, 0, R.string.menu_add).setIcon(R.drawable.ic_add_black_24dp);
         addTable.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        menu.add(0, MENU_STATS_MERGE, 0, R.string.menu_merge_lists);
+        menu.add(0, MENU_STATS_DELETE, 0, R.string.menu_delete);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -63,6 +71,72 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case MENU_STATS_ADD:
                 addNewTable();
+                break;
+            case MENU_STATS_MERGE:
+                ArrayList<String> itemArray = new ArrayList<String>();
+                Cursor cursor = mMyCreateDBTable.getTableList();
+                if (cursor.getCount() > 0) {
+                    cursor.moveToFirst();
+                    do {
+                        itemArray.add(cursor.getString(3));
+                    } while (cursor.moveToNext());
+                }
+                cursor.close();
+                String[] itemList = itemArray.toArray(new String[itemArray.size()]);
+                mCheckedList = new boolean[itemArray.size()];
+                for(int i =0; i< itemArray.size(); i++){
+                    mCheckedList[i] = false;
+                }
+                mHasChecked = false;
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle(getString(R.string.merge_shopping_list))
+                        .setMultiChoiceItems(itemList, mCheckedList, new DialogInterface.OnMultiChoiceClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which, boolean isChecked) {
+                                mCheckedList[which] = isChecked;
+                                if(isChecked) {
+                                    mHasChecked = true;
+                                }
+                            }
+                        })
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                                mergeTable();
+                        }
+                    })
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show();
+                break;
+            case MENU_STATS_DELETE:
+                ArrayList<String> itemdeleteArray = new ArrayList<String>();
+                Cursor cursor2 = mMyCreateDBTable.getTableList();
+                if (cursor2.getCount() > 0) {
+                    cursor2.moveToFirst();
+                    do {
+                        itemdeleteArray.add(cursor2.getString(3));
+                    } while (cursor2.moveToNext());
+                }
+                cursor2.close();
+                String[] itemdeleteList = itemdeleteArray.toArray(new String[itemdeleteArray.size()]);
+                mCheckedList = new boolean[itemdeleteArray.size()];
+                for(int i =0; i< itemdeleteArray.size(); i++){
+                    mCheckedList[i] = false;
+                }
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle(getString(R.string.delete_shopping_list))
+                        .setMultiChoiceItems(itemdeleteList, mCheckedList, new DialogInterface.OnMultiChoiceClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which, boolean isChecked) {
+                                mCheckedList[which] = isChecked;
+                            }
+                        })
+                        .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                deleteTable();
+                            }
+                        })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
                 break;
             default:
         }
@@ -77,16 +151,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        mLinearLayout.removeAllViews();
         mMyCreateDBTable.close();
+        System.exit(0);
     }
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
         final View view = v;
-        MenuItem rename = menu.add(0, 0, 0, "Rename");
-        MenuItem copy = menu.add(0, 1, 0, "Copy");
-        MenuItem delete = menu.add(0, 2, 0, "Delete");
+        MenuItem rename = menu.add(0, 0, 0, R.string.menu_rename);
+        MenuItem copy = menu.add(0, 1, 0, R.string.menu_copy);
+        MenuItem delete = menu.add(0, 2, 0, R.string.menu_delete);
+        MenuItem share = menu.add(0, 2, 0, R.string.menu_share);
         rename.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
@@ -104,10 +181,41 @@ public class MainActivity extends AppCompatActivity {
         delete.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
-                mLinearLayout.removeAllViews();
-                //deleate database table
-                mMyCreateDBTable.deleteTable(TABLE_NAME + view.getId(), view.getId());
-                initViews();
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle(getString(R.string.delete_shopping_list))
+                        .setMessage(getString(R.string.confirm_to_delete))
+                        .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                mLinearLayout.removeView(view);
+                                //deleate database table
+                                mMyCreateDBTable.deleteTable(TABLE_NAME + view.getId(), view.getId());
+                            }
+                        })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
+                return true;
+            }
+        });
+        share.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                Intent intent = new Intent(Intent.ACTION_SEND);
+                intent.setType("text/plain");
+                String msgText = "";
+                mMyCreateDBTable.openTable(TABLE_NAME + view.getId());
+                Cursor cursor = mMyCreateDBTable.getData();
+                if (cursor.getCount() > 0) {
+                    cursor.moveToFirst();
+                    do {
+                        msgText = msgText + cursor.getString(1) + "\n" + String.valueOf(cursor.getInt(2)) + cursor.getString(3) +
+                                " " + String.valueOf(cursor.getFloat(4)) + cursor.getString(5) +
+                                "\n" + String.valueOf(cursor.getFloat(6)) + cursor.getString(5) + "/" + cursor.getString(3) +
+                                "\n" + cursor.getString(7) + "\n\n";
+                    } while (cursor.moveToNext());
+                }
+                cursor.close();
+                intent.putExtra(Intent.EXTRA_TEXT, msgText);
+                startActivity(Intent.createChooser(intent, getString(R.string.menu_share)));
                 return true;
             }
         });
@@ -132,22 +240,22 @@ public class MainActivity extends AppCompatActivity {
     private void addNewTable() {
         final EditText input = new EditText(MainActivity.this);
         new AlertDialog.Builder(MainActivity.this)
-                .setTitle("Add new shopping list")
-                .setMessage("Edit shopping title")
+                .setTitle(getString(R.string.add_new_shopping_list))
+                .setMessage(getString(R.string.edit_shoppinglist_title))
                 .setView(input)
-                .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         //create new database table
                         String text = input.getText().toString();
                         if (text.trim().equals("")) {
-                            text = "Shopping list " + mTableNum;
+                            text = getString(R.string.default_shoppinglist_title) + mTableNum;
                         }
                         addNewButton(MainActivity.this, text, mTableNum);
                         mMyCreateDBTable.createTable(mTableNum, TABLE_NAME + mTableNum, text);
                         mTableNum++;
                     }
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
 
@@ -155,10 +263,10 @@ public class MainActivity extends AppCompatActivity {
         final View view = v;
         final EditText input = new EditText(v.getContext());
         new AlertDialog.Builder(v.getContext())
-                .setTitle("Rename shopping list")
-                .setMessage("Edit shopping title")
+                .setTitle(getString(R.string.rename_shopping_list))
+                .setMessage(getString(R.string.edit_shoppinglist_title))
                 .setView(input)
-                .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         //update database table
                         String text = input.getText().toString();
@@ -170,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
                         initViews();
                     }
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
 
@@ -187,15 +295,15 @@ public class MainActivity extends AppCompatActivity {
         final View view = v;
         final EditText input = new EditText(v.getContext());
         new AlertDialog.Builder(v.getContext())
-                .setTitle("Copy shopping list")
-                .setMessage("Edit shopping title")
+                .setTitle(getString(R.string.copy_shopping_list))
+                .setMessage(getString(R.string.edit_shoppinglist_title))
                 .setView(input)
-                .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         //create new database table
                         String text = input.getText().toString();
                         if (text.trim().equals("")) {
-                            text = "Shopping list " + mTableNum;
+                            text = getString(R.string.default_shoppinglist_title) + mTableNum;
                         }
                         addNewButton(MainActivity.this, text, mTableNum);
                         mMyCreateDBTable.createTable(mTableNum, TABLE_NAME + mTableNum, text);
@@ -213,8 +321,72 @@ public class MainActivity extends AppCompatActivity {
                         mTableNum++;
                     }
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(android.R.string.cancel, null)
                 .show();
+    }
+
+    private void mergeTable(){
+        if(mHasChecked) {
+            final EditText input = new EditText(this);
+            new AlertDialog.Builder(this)
+                    .setTitle(getString(R.string.merge_shopping_list))
+                    .setMessage(getString(R.string.edit_shoppinglist_title))
+                    .setView(input)
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            //create new database table
+                            String text = input.getText().toString();
+                            if (text.trim().equals("")) {
+                                text = getString(R.string.default_shoppinglist_title) + mTableNum;
+                            }
+                            addNewButton(MainActivity.this, text, mTableNum);
+                            mMyCreateDBTable.createTable(mTableNum, TABLE_NAME + mTableNum, text);
+
+                            //copy  table's item to database from mCheckedList
+                            Cursor cursor = mMyCreateDBTable.getTableList();
+                            int i = 0;
+                            if (cursor.getCount() > 0) {
+                                cursor.moveToFirst();
+                                do {
+                                    if (i < mCheckedList.length && mCheckedList[i] == true) {
+                                        mMyCreateDBTable.openTable(TABLE_NAME + cursor.getInt(1));
+                                        Cursor cursorInList = mMyCreateDBTable.getData();
+                                        if (cursorInList.getCount() > 0) {
+                                            cursorInList.moveToFirst();
+                                            do {
+                                                mMyCreateDBTable.insertToTable(TABLE_NAME + mTableNum, cursorInList.getString(1), cursorInList.getInt(2), cursorInList.getString(3), cursorInList.getFloat(4), cursorInList.getString(5), cursor.getString(3) + "\n" + cursorInList.getString(7), cursorInList.getString(8));
+                                            } while (cursorInList.moveToNext());
+                                        }
+                                        cursorInList.close();
+                                    }
+                                    i++;
+                                } while (cursor.moveToNext());
+                            }
+                            cursor.close();
+                            mTableNum++;
+                        }
+                    })
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show();
+        }
+    }
+
+    private void deleteTable(){
+        mLinearLayout.removeAllViews();
+        Cursor cursor = mMyCreateDBTable.getTableList();
+        int i = 0;
+        if (cursor.getCount() > 0) {
+            cursor.moveToFirst();
+            do {
+                if (i < mCheckedList.length && mCheckedList[i] == true) {
+                    //deleate database table
+                    mMyCreateDBTable.deleteTable(TABLE_NAME + cursor.getInt(1), cursor.getInt(1));
+                }
+                i++;
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        initViews();
     }
 
 }

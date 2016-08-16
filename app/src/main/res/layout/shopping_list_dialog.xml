@@ -21,7 +21,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Item"/>
+                android:text="@string/dialog_item"/>
             <EditText
                 android:id="@+id/item_name"
                 android:layout_width="0dp"
@@ -35,7 +35,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Number"/>
+                android:text="@string/dialog_number"/>
             <EditText
                 android:id="@+id/item_num"
                 android:layout_width="0dp"
@@ -48,7 +48,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Unit"/>
+                android:text="@string/dialog_unit"/>
             <EditText
                 android:id="@+id/item_unit"
                 android:layout_width="0dp"
@@ -62,7 +62,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Price"/>
+                android:text="@string/dialog_price"/>
             <EditText
                 android:id="@+id/item_price"
                 android:layout_width="0dp"
@@ -75,7 +75,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Currency"/>
+                android:text="@string/dialog_currency"/>
             <EditText
                 android:id="@+id/currency"
                 android:layout_width="0dp"
@@ -89,7 +89,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Notes"/>
+                android:text="@string/dialog_notes"/>
             <EditText
                 android:id="@+id/shop_name"
                 android:layout_width="0dp"

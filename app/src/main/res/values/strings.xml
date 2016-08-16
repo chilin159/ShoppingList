@@ -1,6 +1,33 @@
 <resources>
     <string name="app_name">ShoppingList</string>
-
-<!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="menu_add">Add</string>
+    <string name="menu_rename">Rename</string>
+    <string name="menu_copy">Copy</string>
+    <string name="menu_delete">Delete</string>
+    <string name="menu_share">Share</string>
+    <string name="menu_merge_lists">Merge lists</string>
+    <string name="menu_sort_by_item">Sort by item</string>
+    <string name="menu_sort_by_price">Sort by price</string>
+    <string name="menu_sort_by_average_price">Sort by average price</string>
+    <string name="menu_sort_by_note">Sort by note</string>
+    <string name="add_new_shopping_list">Add new shopping list</string>
+    <string name="rename_shopping_list">Rename shopping list</string>
+    <string name="copy_shopping_list">Copy shopping list</string>
+    <string name="delete_shopping_list">Delete shopping list</string>
+    <string name="confirm_to_delete">Confirm to delete it?</string>
+    <string name="merge_shopping_list">Merge shopping list</string>
+    <string name="edit_shoppinglist_title">Edit shopping list title</string>
+    <string name="default_shoppinglist_title">Shopping list </string>
+    <string name="add_new_item">Add new item</string>
+    <string name="copy_item">Copy item</string>
+    <string name="delete_item">Delete item</string>
+    <string name="please_enter_item_name">Please enter item name</string>
+    <string name="dialog_item">Item</string>
+    <string name="dialog_number">Number</string>
+    <string name="dialog_unit">Unit</string>
+    <string name="dialog_price">Price</string>
+    <string name="dialog_currency">Currency</string>
+    <string name="dialog_notes">Notes</string>
+    <string name="default_unit">pcs</string>
+    <string name="default_currency">NTD</string>
 </resources>

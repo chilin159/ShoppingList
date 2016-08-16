@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">購物比價清單</string>
+    <string name="menu_add">新增</string>
+    <string name="menu_rename">重新命名</string>
+    <string name="menu_copy">複製</string>
+    <string name="menu_delete">刪除</string>
+    <string name="menu_share">分享</string>
+    <string name="menu_merge_lists">合併</string>
+    <string name="menu_sort_by_item">照項目排序</string>
+    <string name="menu_sort_by_price">照價格排序</string>
+    <string name="menu_sort_by_average_price">照平均價格排序</string>
+    <string name="menu_sort_by_note">照備註排序</string>
+    <string name="add_new_shopping_list">新增清單</string>
+    <string name="rename_shopping_list">重新命名清單</string>
+    <string name="copy_shopping_list">複製清單</string>
+    <string name="delete_shopping_list">刪除清單</string>
+    <string name="confirm_to_delete">確定刪除?</string>
+    <string name="merge_shopping_list">合併清單</string>
+    <string name="edit_shoppinglist_title">編輯標題</string>
+    <string name="default_shoppinglist_title">清單</string>
+    <string name="add_new_item">新增項目</string>
+    <string name="copy_item">複製項目</string>
+    <string name="delete_item">刪除項目</string>
+    <string name="please_enter_item_name">請輸入項目名稱</string>
+    <string name="dialog_item">項目</string>
+    <string name="dialog_number">數量</string>
+    <string name="dialog_unit">單位</string>
+    <string name="dialog_price">價格</string>
+    <string name="dialog_currency">幣別</string>
+    <string name="dialog_notes">備註</string>
+    <string name="default_unit">個</string>
+    <string name="default_currency">台幣</string>
+</resources>
