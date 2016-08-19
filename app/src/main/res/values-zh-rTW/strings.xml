@@ -16,6 +16,7 @@
     <string name="delete_shopping_list">刪除清單</string>
     <string name="confirm_to_delete">確定刪除?</string>
     <string name="merge_shopping_list">合併清單</string>
+    <string name="merge_items">合併項目</string>
     <string name="edit_shoppinglist_title">編輯標題</string>
     <string name="default_shoppinglist_title">清單</string>
     <string name="add_new_item">新增項目</string>
@@ -31,4 +32,5 @@
     <string name="default_unit">個</string>
     <string name="default_currency">台幣</string>
     <string name="slide_to_delete">滑動以刪除</string>
+    <string name="sum_of_price">總價格 : </string>
 </resources>

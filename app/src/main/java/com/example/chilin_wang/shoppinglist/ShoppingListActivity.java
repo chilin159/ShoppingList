@@ -33,6 +33,7 @@ import android.view.animation.LayoutAnimationController;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -48,8 +49,7 @@ public class ShoppingListActivity extends AppCompatActivity {
 
     private static final int MENU_STATS_ADD = Menu.FIRST + 1;
     private static final int MENU_STATS_SORT = Menu.FIRST + 4;
-    private static final int MENU_STATS_DELETE = Menu.FIRST + 2;
-    private static final int MENU_STATS_DELETE_DONE = Menu.FIRST + 3;
+    private static final int MENU_STATS_MERGE = Menu.FIRST + 2;
     private final static int PHOTO = 99;
     private final static int REQUEST_EXTERNAL_STORAGE = 0;
     private View mInputView;
@@ -65,12 +65,16 @@ public class ShoppingListActivity extends AppCompatActivity {
     private MyCreateDBTable mMyCreateDBTable;
     private int mTableId;
     private LinearLayout mLinearLayout;
+    private TextView mSumText;
     private boolean mIsEnterCamera = false;
     private boolean mIsFirstRequestPermission = false;
     private boolean mIsFirstAddButton;
     private MenuItem mDeleteTableMenu,mDeleteDoneMenu;
     private float historicX = Float.NaN, historicY = Float.NaN;
     private boolean mIsDeleteItemBySlide = false;
+    private  boolean[] mCheckedList;
+    private boolean mHasChecked;
+    private float mPreSum = 0;
     private View.OnClickListener choosePhotoImage = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -97,6 +101,7 @@ public class ShoppingListActivity extends AppCompatActivity {
         mMyCreateDBTable = new MyCreateDBTable(getApplicationContext());
         mMyCreateDBTable.openTable(MainActivity.TABLE_NAME + mTableId);
         mLinearLayout = (LinearLayout) findViewById(R.id.viewObj);
+        mSumText = (TextView) findViewById(R.id.sum_text);
         mIsFirstAddButton = true;
         mPhone = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(mPhone);
@@ -114,6 +119,7 @@ public class ShoppingListActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuItem addTable = menu.add(0, MENU_STATS_ADD, 0, R.string.menu_add).setIcon(R.drawable.ic_add_black_24dp);
         addTable.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        menu.add(0, MENU_STATS_MERGE, 0, R.string.menu_merge_lists);
         menu.add(0, MENU_STATS_SORT, 0, R.string.menu_sort_by_item);
         menu.add(0, MENU_STATS_SORT + 1, 0, R.string.menu_sort_by_price);
         menu.add(0, MENU_STATS_SORT + 2, 0, R.string.menu_sort_by_average_price);
@@ -138,6 +144,42 @@ public class ShoppingListActivity extends AppCompatActivity {
                 break;
             case MENU_STATS_SORT + 3:
                 orderItem(3);
+                break;
+            case MENU_STATS_MERGE:
+                ArrayList<String> itemArray = new ArrayList<String>();
+                Cursor cursor = mMyCreateDBTable.getData();
+                if(cursor.getCount() > 0){
+                    cursor.moveToFirst();
+                    do{
+                        itemArray.add(cursor.getString(1)+" "+cursor.getInt(2)+cursor.getString(3)+" "+cursor.getFloat(4)+cursor.getString(5));
+                    } while (cursor.moveToNext());
+
+                String[] itemList = itemArray.toArray(new String[itemArray.size()]);
+                mCheckedList = new boolean[itemArray.size()];
+                for(int i =0; i< itemArray.size(); i++){
+                    mCheckedList[i] = false;
+                }
+                mHasChecked = false;
+                new AlertDialog.Builder(ShoppingListActivity.this)
+                        .setTitle(getString(R.string.merge_items))
+                        .setMultiChoiceItems(itemList, mCheckedList, new DialogInterface.OnMultiChoiceClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which, boolean isChecked) {
+                                mCheckedList[which] = isChecked;
+                                if(isChecked) {
+                                    mHasChecked = true;
+                                }
+                            }
+                        })
+                        .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                mergeItem();
+                            }
+                        })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
+                }
+                cursor.close();
                 break;
             case android.R.id.home:
                 super.onBackPressed();
@@ -277,6 +319,8 @@ public class ShoppingListActivity extends AppCompatActivity {
     }
 
     private void addNewButton(Context context, Cursor cursor, int id) {
+        mPreSum = mPreSum + cursor.getFloat(4);
+        mSumText.setText(String.valueOf(mPreSum));
         if(mIsFirstAddButton) {
             mLinearLayout.addView(new SlideDeleteView(this));
             mIsFirstAddButton = false;
@@ -301,6 +345,12 @@ public class ShoppingListActivity extends AppCompatActivity {
                         if (event.getX() - historicX > MainActivity.DELTA) {
                             mLinearLayout.removeView(v);
                             //deleate database item
+                            Cursor cursor = mMyCreateDBTable.query(v.getId());
+                            if (cursor.moveToFirst()) {
+                                mPreSum = mPreSum - cursor.getFloat(4);
+                            }
+                            cursor.close();
+                            mSumText.setText(String.valueOf(mPreSum));
                             mMyCreateDBTable.delete(v.getId());
                             hideSlideDeleteViewIfClear();
                         }
@@ -407,15 +457,20 @@ public class ShoppingListActivity extends AppCompatActivity {
                             if (!mItemPrice.getText().toString().equals("")) {
                                 price = Float.parseFloat(mItemPrice.getText().toString());
                             }
+                            Cursor cursor = mMyCreateDBTable.query(view.getId());
+                            if (cursor.moveToFirst()) {
+                                mPreSum = mPreSum - cursor.getFloat(4);
+                            }
+                            cursor.close();
                             mMyCreateDBTable.update(view.getId(), mItemName.getText().toString(), num,
                                     mItemUnit.getText().toString(), price,
                                     mCurrency.getText().toString(), mShopName.getText().toString(), mPhotoUri);
                             mLinearLayout.removeView(view);
-                            Cursor cursor = mMyCreateDBTable.query(view.getId());
-                            if (cursor.moveToFirst()) {
-                                addNewButton(ShoppingListActivity.this, cursor, view.getId());
+                            Cursor cursor2 = mMyCreateDBTable.query(view.getId());
+                            if (cursor2.moveToFirst()) {
+                                addNewButton(ShoppingListActivity.this, cursor2, view.getId());
                             }
-                            cursor.close();
+                            cursor2.close();
                         }
                         if (!isFinishDialog) {
                             try {
@@ -653,5 +708,108 @@ public class ShoppingListActivity extends AppCompatActivity {
             mIsFirstAddButton = true;
         }
         cursor.close();
+    }
+
+    private void mergeItem(){
+        if(mHasChecked) {
+            Cursor cursor = mMyCreateDBTable.getData();
+            int i = 0;
+            int num = 0;
+            float price = 0;
+            String unit = getString(R.string.default_unit);
+            String currency = getString(R.string.default_currency);
+            String preunit="",precurrency="";
+            boolean isFirstStart = true,isUnitSame = true,isCurrencySame = true;
+            if(cursor.getCount() > 0){
+                cursor.moveToFirst();
+                do{
+                    if (i < mCheckedList.length && mCheckedList[i] == true) {
+                        num = num + cursor.getInt(2);
+                        price = price + cursor.getFloat(4);
+                        if(isFirstStart) {
+                            preunit = cursor.getString(3);
+                            precurrency = cursor.getString(5);
+                            isFirstStart = false;
+                        }
+                            if(!cursor.getString(3).equals(preunit)){
+                                Log.d(MainActivity.TAG,"unit ="+cursor.getString(3)+", preunit="+preunit);
+                                isUnitSame = false;
+                            }
+                            if(!cursor.getString(5).equals(precurrency)){
+                                isCurrencySame = false;
+                            }
+                    }
+                    i++;
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            initDialogLayout();
+            mPhotoUri = "";
+            final int itemnum = num;
+            final float itemprice = price;
+            if(isUnitSame){
+                unit = preunit;
+            }
+            if(isCurrencySame){
+                currency = precurrency;
+            }
+            final String itemunit = unit;
+            final String itemcurrency = currency;
+            mItemNum.setText(String.valueOf(itemnum));
+            mItemPrice.setText(String.valueOf(itemprice));
+            mItemUnit.setHint(itemunit);
+            mCurrency.setHint(itemcurrency);
+
+            builder.setTitle(getString(R.string.merge_items))
+                    .setView(mInputView)
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            boolean isFinishDialog = true;
+                            if (mItemName.getText().toString().trim().equals("")) {
+                                if (mItemName.getText().toString().trim().equals("")) {
+                                    mItemName.setHint(getString(R.string.please_enter_item_name));
+                                }
+                                isFinishDialog = false;
+                            } else {
+                                //insert data to database
+                                mMyCreateDBTable.insertToTable(MainActivity.TABLE_NAME + mTableId, mItemName.getText().toString(), itemnum,
+                                        itemunit, itemprice, itemcurrency,
+                                        mShopName.getText().toString(), mPhotoUri);
+                                loadValue(false);
+                            }
+                            if (!isFinishDialog) {
+                                try {
+                                    Field field = dialog.getClass().getSuperclass().getDeclaredField("mShowing");
+                                    field.setAccessible(true);
+                                    field.set(dialog, false);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            } else {
+                                try {
+                                    Field field = dialog.getClass().getSuperclass().getDeclaredField("mShowing");
+                                    field.setAccessible(true);
+                                    field.set(dialog, true);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    })
+                    .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            try {
+                                Field field = dialog.getClass().getSuperclass().getDeclaredField("mShowing");
+                                field.setAccessible(true);
+                                field.set(dialog, true);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    })
+                    .show();
+        }
     }
 }

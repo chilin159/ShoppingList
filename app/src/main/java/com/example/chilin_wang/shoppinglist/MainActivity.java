@@ -87,8 +87,7 @@ public class MainActivity extends AppCompatActivity {
                     do {
                         itemArray.add(cursor.getString(3));
                     } while (cursor.moveToNext());
-                }
-                cursor.close();
+
                 String[] itemList = itemArray.toArray(new String[itemArray.size()]);
                 mCheckedList = new boolean[itemArray.size()];
                 for(int i =0; i< itemArray.size(); i++){
@@ -113,6 +112,8 @@ public class MainActivity extends AppCompatActivity {
                     })
                     .setNegativeButton(android.R.string.cancel, null)
                     .show();
+                }
+                cursor.close();
                 break;
             case MENU_STATS_DELETE:
                 ArrayList<String> itemdeleteArray = new ArrayList<String>();

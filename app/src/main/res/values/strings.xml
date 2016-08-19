@@ -17,6 +17,7 @@
     <string name="delete_shopping_list">Delete shopping list</string>
     <string name="confirm_to_delete">Confirm to delete it?</string>
     <string name="merge_shopping_list">Merge shopping list</string>
+    <string name="merge_items">Merge items</string>
     <string name="edit_shoppinglist_title">Edit shopping list title</string>
     <string name="default_shoppinglist_title">Shopping list </string>
     <string name="add_new_item">Add new item</string>
@@ -32,4 +33,5 @@
     <string name="default_unit">pcs</string>
     <string name="default_currency">NTD</string>
     <string name="slide_to_delete">Slide to delete</string>
+    <string name="sum_of_price">Sum of price : </string>
 </resources>
