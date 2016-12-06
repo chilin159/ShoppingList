@@ -27,6 +27,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.animation.LayoutAnimationController;
@@ -112,7 +113,6 @@ public class ShoppingListActivity extends AppCompatActivity {
             }
         });
         thread.start();
-
     }
 
     @Override
@@ -309,18 +309,24 @@ public class ShoppingListActivity extends AppCompatActivity {
                             + cursor.getString(2) + "," + cursor.getString(3) + "," + cursor.getString(4)
                             + "," + cursor.getString(5) + "," + cursor.getString(6) + "," + cursor.getString(7));
                     addNewButton(this, cursor, cursor.getInt(0));
+                    mPreSum = mPreSum + cursor.getFloat(4);
                 } while (cursor.moveToNext());
             } else {
                 cursor.moveToLast();
                 addNewButton(this, cursor, cursor.getInt(0));
+                mPreSum = mPreSum + cursor.getFloat(4);
             }
         }
         cursor.close();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mSumText.setText(String.valueOf(mPreSum));
+            }
+        });
     }
 
     private void addNewButton(Context context, Cursor cursor, int id) {
-        mPreSum = mPreSum + cursor.getFloat(4);
-        mSumText.setText(String.valueOf(mPreSum));
         if(mIsFirstAddButton) {
             mLinearLayout.addView(new SlideDeleteView(this));
             mIsFirstAddButton = false;
@@ -469,8 +475,10 @@ public class ShoppingListActivity extends AppCompatActivity {
                             Cursor cursor2 = mMyCreateDBTable.query(view.getId());
                             if (cursor2.moveToFirst()) {
                                 addNewButton(ShoppingListActivity.this, cursor2, view.getId());
+                                mPreSum = mPreSum + cursor2.getFloat(4);
                             }
                             cursor2.close();
+                            mSumText.setText(String.valueOf(mPreSum));
                         }
                         if (!isFinishDialog) {
                             try {
